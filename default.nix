@@ -1,7 +1,7 @@
 {
   nixpkgs ? builtins.fetchTarball {
-    url = https://github.com/NixOS/nixpkgs/archive/e34208e10033315fddf6909d3ff68e2d3cf48a23.tar.gz;
-    sha256 = "0ngkx5ny7bschmiwc5q9yza8fdwlc3zg47avsywwp8yn96k2cpmg";
+    url = https://github.com/NixOS/nixpkgs/archive/ed4f741c9c7ff7d2283d216debd3a721fd1b6ec2.tar.gz;
+    sha256 = "0bf7bxh3hsb9i0nbxb57khg6ibdg13450yfpz79d9296rvkb2i2g";
   },
   rust-overlay ? builtins.fetchTarball {
     url = https://github.com/oxalica/rust-overlay/archive/01dd01693bd7896529841d55c4d21a98897ef26e.tar.gz;
