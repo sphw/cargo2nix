@@ -4,13 +4,13 @@
     sha256 = "0bf7bxh3hsb9i0nbxb57khg6ibdg13450yfpz79d9296rvkb2i2g";
   },
   rust-overlay ? builtins.fetchTarball {
-    url = https://github.com/oxalica/rust-overlay/archive/01dd01693bd7896529841d55c4d21a98897ef26e.tar.gz;
-    sha256 = "0jhy69209kry339vlydssiz3yalx51wvsbjfd514mi9ip9cb6shn";
+    url = https://github.com/oxalica/rust-overlay/archive/fb8b1172e450433c59d8cb4c6e2a3e19c78dff4f.tar.gz;
+    sha256 = "142k1y0rpbc0q6cxm53r3kkkp8j5hqsd9rsjc4q9ndfdyvqd2qch";
   },
   system ? builtins.currentSystem,
   overlays ? [ ],
   crossSystem ? null,
-  rustChannel ? "1.53.0",
+  rustChannel ? "1.56.0",
 }:
 let
   # 1. Setup nixpkgs with rust and cargo2nix overlays.
