@@ -67,7 +67,8 @@ in
     {%- if crate.source.Local.path == "." %}
     src = fetchCrateLocal workspaceSrc;
     {%- else %}
-    src = fetchCrateLocal (workspaceSrc + "/{{ crate.source.Local.path }}");
+    src = fetchCrateLocal workspaceSrc;
+    workspaceOffset = "{{ crate.source.Local.path }}";
     {%- endif %}
     {%- elif crate.source.Registry.index %}
     src = fetchCrateAlternativeRegistry {

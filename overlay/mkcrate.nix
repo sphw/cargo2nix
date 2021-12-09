@@ -12,6 +12,7 @@
   version,
   registry,
   src,
+  workspaceOffset ? null,
   features ? [ ],
   dependencies ? { },
   devDependencies ? { },
@@ -157,7 +158,11 @@ let
 
     extraRustcBuildFlags = rustcBuildFlags;
 
-    configureCargo = ''
+    configureCargo = optionalString (workspaceOffset != null && workspaceOffset != "") ''
+      mv Cargo.toml Cargo.ws_original.toml || true
+      mv .cargo .ws_original.cargo || true
+      cd ${workspaceOffset}
+    '' + ''
       mkdir -p .cargo
       cat > .cargo/config <<'EOF'
       [target."${rustBuildTriple}"]
