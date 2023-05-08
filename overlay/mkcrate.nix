@@ -27,7 +27,8 @@
   hostPlatformFeatures ? [],
   NIX_DEBUG ? 0,
 }:
-with builtins; with lib; let
+with builtins;
+with lib; let
   inherit (rustLib) rustTriple decideProfile;
   wrapper = rustpkg:
     pkgs.writeScriptBin rustpkg ''
@@ -87,7 +88,7 @@ with builtins; with lib; let
   in
     if compileMode != "doctest"
     then ''
-      ${rustToolchain}/bin/cargo build $CARGO_VERBOSE ${optionalString release "--release"} --target ${rustHostTriple} ${buildMode} \
+      ${rustToolchain}/bin/cargo build $CARGO_VERBOSE ${optionalString release "--release"} -p ${name} --target ${rustHostTriple} ${buildMode} \
         ${featuresArg} ${optionalString (!hasDefaultFeature) "--no-default-features"} \
         --message-format json-diagnostic-rendered-ansi | tee .cargo-build-output \
         1> >(jq 'select(.message != null) .message.rendered' -r)
@@ -256,10 +257,15 @@ with builtins; with lib; let
       runHook postConfigure
     '';
 
-    manifestPatch = toJSON {
-      features = genAttrs features (_: []);
-      profile.${decideProfile compileMode release} = profile;
-    };
+    manifestPatch =
+      # toJSON {
+      #   profile.${decideProfile compileMode release} = profile;
+      # }
+      # + " * "
+      toJSON {
+        features = genAttrs features (_: []);
+      };
+    # + " + (.features += ${toJSON (genAttrs features (_: []))})";
 
     overrideCargoManifest = ''
       echo "[[package]]" > Cargo.lock
@@ -288,10 +294,11 @@ with builtins; with lib; let
               , lib: .lib
               , bin: .bin
               , test: .test
+              , features: (((.features // []) | to_entries | map({key, value: []}) | from_entries) + (.dependencies // [] | to_entries | map({key, value: []}) | from_entries))
               , example: .example
               , bench: (if \"$registry\" == \"unknown\" then .bench else null end)
               } | with_entries(select( .value != null ))
-              + $manifestPatch" \
+              * $manifestPatch" \
         | jq "del(.[][] | nulls)" \
         | remarshal -if json -of toml > Cargo.toml
     '';
