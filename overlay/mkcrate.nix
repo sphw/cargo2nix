@@ -167,6 +167,7 @@ with lib; let
       shell = pkgs.mkShell (removeAttrs drvAttrs ["src"]);
     };
 
+    useWorkspace = true;
     dependencies = depMapToList dependencies;
     buildDependencies = depMapToList buildDependencies;
     devDependencies = depMapToList (optionalAttrs (compileMode != "build") devDependencies);
@@ -181,13 +182,22 @@ with lib; let
     findCrate = ''
       . ${./mkcrate-utils.sh}
       manifest_path=$(cargoRelativeManifest ${name})
-      manifest_dir=''${manifest_path%Cargo.toml}
+      manifest_dir=''${manifest_path%/Cargo.toml}
 
       if [ $manifest_path != "Cargo.toml" ]; then
         shopt -s globstar
+        ${
+        if drvAttrs.useWorkspace
+        then ''
+          mv Cargo.toml Cargo.toml.workspace
+          remarshal -if toml -of json Cargo.toml.workspace | jq 'del(.workspace.dependencies)' | jq '.workspace.members = (.workspace.members | map(select(. == "$manifest_dir")))' | remarshal -of toml -if json > Cargo.toml
+        ''
+        else "mv Cargo.toml Cargo.toml.workspace"
+      }
         if [[ -d .cargo ]]; then
           mv .cargo .cargo.workspace
         fi
+        echo $manifest_dir > foo
         cd "$manifest_dir"
       fi
     '';
@@ -257,15 +267,10 @@ with lib; let
       runHook postConfigure
     '';
 
-    manifestPatch =
-      # toJSON {
-      #   profile.${decideProfile compileMode release} = profile;
-      # }
-      # + " * "
-      toJSON {
-        features = genAttrs features (_: []);
-      };
-    # + " + (.features += ${toJSON (genAttrs features (_: []))})";
+    manifestPatch = toJSON {
+      profile.${decideProfile compileMode release} = profile;
+      features = genAttrs features (_: []);
+    };
 
     overrideCargoManifest = ''
       echo "[[package]]" > Cargo.lock
@@ -294,8 +299,12 @@ with lib; let
               , lib: .lib
               , bin: .bin
               , test: .test
-              , features: (((.features // []) | to_entries | map({key, value: []}) | from_entries) + (.dependencies // [] | to_entries | map({key, value: []}) | from_entries))
               , example: .example
+              ${
+        if drvAttrs.useWorkspace
+        then ", features: (((.features // []) | to_entries | map({key, value: []}) | from_entries) + (.dependencies // [] | to_entries | map({key, value: []}) | from_entries))"
+        else ""
+      }
               , bench: (if \"$registry\" == \"unknown\" then .bench else null end)
               } | with_entries(select( .value != null ))
               * $manifestPatch" \
