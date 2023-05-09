@@ -301,6 +301,12 @@ cargoRelativeManifest() {
     local manifest_path=$(cargo metadata --format-version 1 --no-deps | jq -c ".packages[] | select(.name == \"$1\") | .manifest_path" | tr -d '"')
     local workspace_path=$(cargo metadata --format-version 1 --no-deps | jq -c '.workspace_root' | tr -d '"')
     workspace_path="${workspace_path%/}/"
+    local final_man_path="${manifest_path#"$workspace_path"}"
+    manifest_dir=''${final_man_path%Cargo.toml}
+    (cargo metadata --format-version 1 --no-deps | jq ".packages[] | select(.name == \"$1\")" || echo "{}") \
+    | jq '{package: {name: .name, authors: .authors, categories: .categories, description: .description, documentation: .documentation, edition: .edition, exclude: .exclude, homepage: .homepage, include: .include, keywords: .keywords, license: .license, publish: .publish, readme: .readme, repository: .repository, version: .version,}}' \
+    | jq 'del(..|nulls)' \
+    > "./${manifest_dir}/Cargo.metadata.json"
 
-    echo "${manifest_path#"$workspace_path"}"
+    echo $final_man_path
 }

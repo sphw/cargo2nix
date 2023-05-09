@@ -167,7 +167,7 @@ with lib; let
       shell = pkgs.mkShell (removeAttrs drvAttrs ["src"]);
     };
 
-    useWorkspace = true;
+    useWorkspace = false;
     dependencies = depMapToList dependencies;
     buildDependencies = depMapToList buildDependencies;
     devDependencies = depMapToList (optionalAttrs (compileMode != "build") devDependencies);
@@ -182,7 +182,7 @@ with lib; let
     findCrate = ''
       . ${./mkcrate-utils.sh}
       manifest_path=$(cargoRelativeManifest ${name})
-      manifest_dir=''${manifest_path%/Cargo.toml}
+      manifest_dir=''${manifest_path%Cargo.toml}
 
       if [ $manifest_path != "Cargo.toml" ]; then
         shopt -s globstar
@@ -308,8 +308,11 @@ with lib; let
               , bench: (if \"$registry\" == \"unknown\" then .bench else null end)
               } | with_entries(select( .value != null ))
               * $manifestPatch" \
-        | jq "del(.[][] | nulls)" \
-        | remarshal -if json -of toml > Cargo.toml
+        | jq "del(.[][] | nulls)" > Cargo.t.json
+        cat Cargo.t.json
+        cat Cargo.metadata.json
+        jq -s ".[0] * .[1]" Cargo.t.json Cargo.metadata.json | jq "del(.[][] | nulls)" > Cargo.json
+        cat Cargo.json | remarshal -if json -of toml > Cargo.toml
     '';
 
     setBuildEnv = ''
